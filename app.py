@@ -23,19 +23,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-
-# User model
-# Function to create database if it doesn't exist
-def create_database_if_not_exists():
-    db_name = 'myadmin'
-    connection = pymysql.connect(host='localhost', user='root', password='')
-    cursor = connection.cursor()
-    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
-    connection.close()
-
-# Call the function to ensure the database exists
-create_database_if_not_exists()
-
 # Define models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
