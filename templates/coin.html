@@ -4,146 +4,195 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coin Flip Betting Game</title>
-    <link rel="stylesheet" href="/static/css/coin.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #1b1f23;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        .game-container {
+            text-align: center;
+            padding: 30px;
+            background: #222831;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 {
+            color: #00adb5;
+        }
+        .coin {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+            position: relative;
+            perspective: 1000px;
+        }
+        .coin-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            position: absolute;
+            backface-visibility: hidden;
+            transition: transform 0.3s;
+        }
+        .heads {
+            background-image: url('/static/img/head.png'); /* Replace with online coin heads image */
+            background-size: cover;
+            transform: rotateY(0deg);
+        }
+        .tails {
+            background-image: url('/static/img/tail.png'); /* Replace with online coin tails image */
+            background-size: cover;
+            transform: rotateY(180deg);
+        }
+        .buttons, .stats {
+            margin: 20px 0;
+        }
+        .button {
+            background-color: #00adb5;
+            border: none;
+            padding: 10px 15px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #007f87;
+        }
+        .result, .stats, .balance {
+            margin-top: 15px;
+            font-size: 1.2em;
+        }
+        .input-field {
+            padding: 8px;
+            font-size: 16px;
+            width: 100px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div class="game-container">
         <h1>Coin Flip Betting Game</h1>
-        <!-- Dynamic Wallet Balance -->
-        <div class="balance" id="balance">Loading...</div>
+        <div class="coin" id="coin">
+            <div class="coin-img heads"></div>
+            <div class="coin-img tails"></div>
+        </div>
 
-        <script>
-            // Fetch wallet balance from the backend and update dynamically
-            function fetchBalance() {
-                fetch('/get_user')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error) {
-                            alert(data.error);
-                        } else {
-                            document.getElementById("balance").innerText = `₹${data.wallet_balance}`;
-                        }
-                    })
-                    .catch(err => console.error("Error fetching balance:", err));
-            }
-            fetchBalance(); // Call function on page load
-        </script>
-
-        <!-- Input Field for Bet Amount -->
-        <input type="number" id="betAmount" class="input-field" placeholder="Bet Amount" min="1">
-
-        <!-- Buttons for Heads and Tails -->
+        <div class="balance" id="balance">Balance: $100</div>
+        <input type="number" id="betAmount" class="input-field" placeholder="Bet Amount" min="1" max="100">
+        
         <div class="buttons">
-            <button class="button" onclick="placeBet('heads')">Heads</button>
-            <button class="button" onclick="placeBet('tails')">Tails</button>
+            <button class="button" onclick="placeBet('heads')">Bet on Heads</button>
+            <button class="button" onclick="placeBet('tails')">Bet on Tails</button>
         </div>
 
-        <!-- Display Result -->
         <div class="result" id="result">Place your bet to start!</div>
-        <!-- Display Win/Loss Stats -->
         <div class="stats" id="stats">Wins: 0 | Losses: 0</div>
-
-        <!-- Game History -->
-        <div class="history-container" id="history">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Game ID</th>
-                        <th>Time</th>
-                        <th>Bet</th>
-                        <th>Outcome</th>
-                        <th>Result</th>
-                        <th>Balance</th>
-                    </tr>
-                </thead>
-                <tbody id="historyBody">
-                    <!-- Game History will be appended here -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Reset Button -->
-        <button class="button" onclick="resetGame()">Reset Game</button>
+        <!-- <button class="button" onclick="resetGame()">Reset Game</button> -->
     </div>
 
-    <!-- Coin Flip Sound -->
     <audio id="flipSound" src="https://www.soundjay.com/coin-sounds/coin-flip-1.mp3" preload="auto"></audio>
     
-    <!-- Game Logic -->
     <script>
+        let userBet = null;
         let balance = 100;
         let wins = 0;
         let losses = 0;
-        let gameId = 1;
+
+        function updateBalance(amount) {
+            balance += amount;
+            document.getElementById("balance").innerText = `Balance: $${balance}`;
+        }
 
         function updateStats() {
             document.getElementById("stats").innerText = `Wins: ${wins} | Losses: ${losses}`;
         }
 
-        function updateHistory(result, bet, outcome, newBalance) {
-            const historyBody = document.getElementById("historyBody");
-            const currentTime = new Date().toLocaleTimeString();
-            const historyRow = document.createElement("tr");
-            historyRow.innerHTML = `
-                <td>${gameId}</td>
-                <td>${currentTime}</td>
-                <td>${bet.toUpperCase()}</td>
-                <td>${outcome.toUpperCase()}</td>
-                <td>${result}</td>
-                <td>₹${newBalance}</td>
-            `;
-            gameId++;
-            historyBody.appendChild(historyRow);
-        }
-
         function placeBet(bet) {
             const betAmount = parseInt(document.getElementById("betAmount").value);
-
-            if (isNaN(betAmount) || betAmount <= 0) {
-                document.getElementById("result").innerText = "Please enter a valid bet amount!";
+            
+            if (isNaN(betAmount) || betAmount <= 0 || betAmount > balance) {
+                document.getElementById("result").innerText = "Invalid bet amount!";
                 return;
             }
 
-            // Send bet to the backend
-            fetch('/coin/place_bet', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    prediction: bet,
-                    bet_amount: betAmount
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById("result").innerText = data.error;
+            userBet = bet;
+            updateBalance(-betAmount);
+            document.getElementById("result").innerText = `You bet $${betAmount} on ${bet.toUpperCase()}! Flipping the coin...`;
+            document.getElementById("flipSound").play();
+            flipCoinMultipleTimes(betAmount);
+        }
+
+        function flipCoinMultipleTimes(betAmount) {
+            const coin = document.getElementById("coin");
+            let flipCount = 0;
+            const maxFlips = 10; // Number of preliminary flips
+
+            const flipInterval = setInterval(() => {
+                const interimOutcome = Math.random() < 0.5 ? "heads" : "tails";
+                coin.classList.toggle("flip");
+                
+                if (interimOutcome === "heads") {
+                    document.querySelector(".heads").style.transform = "rotateY(0deg)";
+                    document.querySelector(".tails").style.transform = "rotateY(180deg)";
                 } else {
-                    balance = data.new_balance;
-                    document.getElementById("balance").innerText = `₹${balance}`;
-                    document.getElementById("result").innerText = data.win
-                        ? `🎉 You won ₹${data.winnings}! Outcome: ${data.outcome.toUpperCase()}`
-                        : `😞 You lost. Outcome: ${data.outcome.toUpperCase()}`;
-                    updateHistory(data.win ? "Win" : "Loss", bet, data.outcome, balance);
+                    document.querySelector(".heads").style.transform = "rotateY(180deg)";
+                    document.querySelector(".tails").style.transform = "rotateY(0deg)";
                 }
-            })
-            .catch(err => {
-                console.error("Error:", err);
-                document.getElementById("result").innerText = "An error occurred!";
-            });
+
+                flipCount++;
+                
+                if (flipCount >= maxFlips) {
+                    clearInterval(flipInterval);
+                    setTimeout(() => revealFinalOutcome(betAmount), 500);
+                }
+            }, 400);
+        }
+
+        function revealFinalOutcome(betAmount) {
+            const coin = document.getElementById("coin");
+            const outcome = Math.random() < 0.5 ? "heads" : "tails";
+
+            if (outcome === "heads") {
+                document.querySelector(".heads").style.transform = "rotateY(0deg)";
+                document.querySelector(".tails").style.transform = "rotateY(180deg)";
+            } else {
+                document.querySelector(".heads").style.transform = "rotateY(180deg)";
+                document.querySelector(".tails").style.transform = "rotateY(0deg)";
+            }
+
+            if (outcome === userBet) {
+                const winAmount = betAmount * 2;
+                updateBalance(winAmount);
+                wins++;
+                document.getElementById("result").innerText = `🎉 You Won! It's ${outcome.toUpperCase()}! You win $${winAmount}`;
+            } else {
+                losses++;
+                document.getElementById("result").innerText = `😞 You Lost! It's ${outcome.toUpperCase()}!`;
+            }
+
+            updateStats();
         }
 
         function resetGame() {
             balance = 100;
             wins = 0;
             losses = 0;
-            gameId = 1;
+            updateBalance(0);
             updateStats();
             document.getElementById("result").innerText = "Place your bet to start!";
             document.getElementById("betAmount").value = "";
-            document.getElementById("historyBody").innerHTML = ""; // Clear history table
-            fetchBalance(); // Refresh balance from the backend
         }
     </script>
 </body>
