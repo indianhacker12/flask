@@ -17,7 +17,7 @@ app = Flask(__name__)
 razorpay_client = razorpay.Client(auth=(RAZORPAY_API_KEY, RAZORPAY_API_SECRET))
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/myadmin'  # MySQL database connection
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://myadminn_user:3eEby3pbvwT76mvbhYaOQh4L7gSctPdw@dpg-cssagt0gph6c7393msb0-a.virginia-postgres.render.com/myadminn' # MySQL database connection
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
