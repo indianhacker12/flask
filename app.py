@@ -28,7 +28,7 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20), unique=True, nullable=False)
     pass_hash = db.Column(db.String(200), nullable=False)  # Store hashed password
-    wallet_balance = db.Column(db.Float, nullable=False, default=0)
+    wallet_balance = db.Column(db.Float, nullable=False, default=30)
 
 # GameResult model for generic game results
 class GameResult(db.Model):
